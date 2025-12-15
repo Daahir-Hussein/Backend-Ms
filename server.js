@@ -32,7 +32,7 @@ app.use(express.json())
 const port = process.env.PORT || 3000;
 
 // Connect to database
-const DATABASE_URL = process.env.DATABASE_URL || 'mongodb://localhost:27017/al_taqwa_school'
+const DATABASE_URL = process.env.DATABASE_URL || 'mongodb+srv://daahirdev_db_user:vxr8mE2LhoLFlN4r@school-ms.gwywmxe.mongodb.net/?appName=School-Ms'
 mongoose.connect(DATABASE_URL).then(() => {
     console.log("Database has Successfully Connected")
     
