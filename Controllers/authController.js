@@ -60,10 +60,26 @@ exports.login = async (req, res) => {
   try {
     const { email, password, role } = req.body;
 
+    console.log('Login attempt received:', { 
+      email: email ? email.toLowerCase() : 'missing', 
+      role: role || 'not specified',
+      hasPassword: !!password 
+    });
+
+    // Validate input
+    if (!email || !password) {
+      console.log('Login validation failed: Missing email or password');
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+
+    // Normalize email to lowercase (since schema stores emails in lowercase)
+    const normalizedEmail = email.toLowerCase().trim();
+
     // Find user by email
-    const user = await userModel.findOne({ email }).populate("teacherId", "fullName email phone classId");
+    const user = await userModel.findOne({ email: normalizedEmail }).populate("teacherId", "fullName email phone classId");
     
     if (!user) {
+      console.log(`Login attempt failed: User not found with email ${normalizedEmail}`);
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
@@ -80,6 +96,7 @@ exports.login = async (req, res) => {
     // Verify password
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
+      console.log(`Login attempt failed: Invalid password for email ${normalizedEmail}`);
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
