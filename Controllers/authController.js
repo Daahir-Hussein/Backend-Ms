@@ -16,8 +16,16 @@ exports.register = async (req, res) => {
   try {
     const { email, password, role, teacherId, fullName } = req.body;
 
+    // Validate input
+    if (!email || !password || !fullName) {
+      return res.status(400).json({ message: "Email, password, and fullName are required" });
+    }
+
+    // Normalize email to lowercase (since schema stores emails in lowercase)
+    const normalizedEmail = email.toLowerCase().trim();
+
     // Check if user already exists
-    const existingUser = await userModel.findOne({ email });
+    const existingUser = await userModel.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(400).json({ message: "User with this email already exists" });
     }
@@ -32,7 +40,7 @@ exports.register = async (req, res) => {
 
     // Create user
     const user = new userModel({
-      email,
+      email: normalizedEmail,
       password,
       role,
       teacherId: role === "teacher" ? teacherId : undefined,
