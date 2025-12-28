@@ -1,56 +1,131 @@
 const studentModel = require("../models/studentModel")
+const classModel = require("../models/classModel")
 
 // create student
+const createStudent = async (req, res) => {
+    try {
+        const { fullName, classId, shift, Parts, phone, emergencyPhone } = req.body;
 
-const createStudent = async (req,res) =>{
-    try{
-        const newStudent = studentModel(req.body)
-        const saveStudent = await newStudent.save()
-        res.status(201).json(saveStudent)
-    }catch (error){
-        console.log(error)
-        res.status(400).json({ error: error.message })
+        // Validate required fields
+        if (!fullName || !classId || !shift || !phone || !emergencyPhone) {
+            return res.status(400).json({ 
+                error: "All fields (fullName, classId, shift, phone, emergencyPhone) are required" 
+            });
+        }
+
+        // Validate class exists
+        const classExists = await classModel.findById(classId);
+        if (!classExists) {
+            return res.status(404).json({ error: "Class not found" });
+        }
+
+        // Validate shift enum
+        const validShifts = ["Morning", "Noon", "AfterNoon", "Night", "Khamiis iyo Jimco"];
+        if (!validShifts.includes(shift)) {
+            return res.status(400).json({ error: "Invalid shift value" });
+        }
+
+        // Validate phone numbers are positive
+        if (phone <= 0 || emergencyPhone <= 0) {
+            return res.status(400).json({ error: "Phone numbers must be positive numbers" });
+        }
+
+        const newStudent = new studentModel({
+            fullName,
+            classId,
+            shift,
+            Parts: Parts || "None",
+            phone: parseInt(phone),
+            emergencyPhone: parseInt(emergencyPhone)
+        });
+
+        const saveStudent = await newStudent.save();
+        res.status(201).json(saveStudent);
+    } catch (error) {
+        console.error("Create student error:", error);
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({ error: error.message });
+        }
+        res.status(500).json({ error: error.message || "Server error" });
     }
 }
 
 // read Data
-const readStudent = async (req,res) =>{
-    try{
+const readStudent = async (req, res) => {
+    try {
         const getStudent = await studentModel.find()
-        .populate("classId", "className Parts")
-        res.json(getStudent)
-    }catch (error){
-        console.log(error)
-        res.status(500).json({ error: error.message })
+            .populate("classId", "className Parts")
+            .sort({ fullName: 1 });
+        res.status(200).json(getStudent);
+    } catch (error) {
+        console.error("Read student error:", error);
+        res.status(500).json({ error: error.message || "Server error" });
     }
 }
 
-const updateStudent = async (req,res) => {
-    try{
+const updateStudent = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Validate ObjectId format
+        if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+            return res.status(400).json({ error: "Invalid student ID format" });
+        }
+
+        // If classId is being updated, validate it exists
+        if (req.body.classId) {
+            const classExists = await classModel.findById(req.body.classId);
+            if (!classExists) {
+                return res.status(404).json({ error: "Class not found" });
+            }
+        }
+
+        // If shift is being updated, validate it
+        if (req.body.shift) {
+            const validShifts = ["Morning", "Noon", "AfterNoon", "Night", "Khamiis iyo Jimco"];
+            if (!validShifts.includes(req.body.shift)) {
+                return res.status(400).json({ error: "Invalid shift value" });
+            }
+        }
+
         const putData = await studentModel.updateOne(
-            {_id: req.params.id},
-            {$set: req.body}
-        )
-        if(putData.matchedCount === 0){
-            return res.status(404).json({ error: "Student not found" })
+            { _id: id },
+            { $set: req.body }
+        );
+
+        if (putData.matchedCount === 0) {
+            return res.status(404).json({ error: "Student not found" });
         }
-        res.json({ message: "Update Successfully" })
-    }catch (error){
-        console.log(error)
-        res.status(400).json({ error: error.message })
+
+        res.status(200).json({ message: "Update Successfully" });
+    } catch (error) {
+        console.error("Update student error:", error);
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({ error: error.message });
+        }
+        res.status(500).json({ error: error.message || "Server error" });
     }
 }
 
-const deleteStudent = async (req,res) => {
-    try{
-        const removedData = await studentModel.deleteOne({_id: req.params.id})
-        if(removedData.deletedCount === 0){
-            return res.status(404).json({ error: "Student not found" })
+const deleteStudent = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Validate ObjectId format
+        if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+            return res.status(400).json({ error: "Invalid student ID format" });
         }
-        res.json({ message: "Delete Successfully" })
-    }catch (error){
-        console.log(error)
-        res.status(500).json({ error: error.message })
+
+        const removedData = await studentModel.deleteOne({ _id: id });
+
+        if (removedData.deletedCount === 0) {
+            return res.status(404).json({ error: "Student not found" });
+        }
+
+        res.status(200).json({ message: "Delete Successfully" });
+    } catch (error) {
+        console.error("Delete student error:", error);
+        res.status(500).json({ error: error.message || "Server error" });
     }
 }
 
@@ -144,15 +219,15 @@ const progressEnglishParts = async (req, res) => {
             message += ` (${studentIds.length} selected student${studentIds.length > 1 ? 's' : ''})`;
         }
         
-        res.json({
+        res.status(200).json({
             message: message,
             updated: updatedCount,
             totalEnglishStudents: students.length,
             details: details
         });
     } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: error.message });
+        console.error("Progress English parts error:", error);
+        res.status(500).json({ error: error.message || "Server error" });
     }
 }
 
@@ -176,10 +251,10 @@ const searchStudentByName = async (req, res) => {
             return res.status(404).json({ error: "No student found with that name" });
         }
         
-        res.json(students);
+        res.status(200).json(students);
     } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: error.message });
+        console.error("Search student error:", error);
+        res.status(500).json({ error: error.message || "Server error" });
     }
 }
 

@@ -58,7 +58,10 @@ exports.getDailyReport = async (req, res) => {
     res.status(200).json({ success: true, data: report });
 
   } catch (error) {
-    console.error("Report Error:", error);
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Attendance report error:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || "Error generating attendance report" 
+    });
   }
 };

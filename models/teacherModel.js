@@ -15,7 +15,7 @@ const teacherSchema = mongoose.Schema({
     },
     classId: {
         type: mongoose.Schema.Types.ObjectId, ref: "classes",
-        rquired:true
+        required: true
     }
 
 })

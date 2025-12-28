@@ -55,9 +55,29 @@ exports.addAttendance = async (req, res) => {
 
     // ✅ Hubi in students id ay sax yihiin
     for (let s of students) {
+      if (!s.studentName) {
+        return res.status(400).json({ message: "Student ID is required for all students" });
+      }
+      
       const student = await studentModel.findById(s.studentName);
       if (!student) {
-        return res.status(404).json({ message: `Student ${s.studentName} not found` });
+        return res.status(404).json({ message: `Student with ID ${s.studentName} not found` });
+      }
+
+      // Validate shift if provided
+      if (s.shift) {
+        const validShifts = ["Morning", "Noon", "AfterNoon", "Night", "Khamiis iyo Jimco"];
+        if (!validShifts.includes(s.shift)) {
+          return res.status(400).json({ message: `Invalid shift value: ${s.shift}` });
+        }
+      }
+
+      // Validate status if provided
+      if (s.status) {
+        const validStatuses = ["Present", "Absent", "Late", "Excused"];
+        if (!validStatuses.includes(s.status)) {
+          return res.status(400).json({ message: `Invalid status value: ${s.status}` });
+        }
       }
     }
 
@@ -128,6 +148,22 @@ exports.updateStudentStatus = async (req, res) => {
   try {
     const { attendanceId, studentId, status } = req.body;
 
+    // Validate required fields
+    if (!attendanceId || !studentId || !status) {
+      return res.status(400).json({ message: "attendanceId, studentId, and status are required" });
+    }
+
+    // Validate status
+    const validStatuses = ["Present", "Absent", "Late", "Excused"];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: `Invalid status. Must be one of: ${validStatuses.join(", ")}` });
+    }
+
+    // Validate ObjectId format
+    if (!attendanceId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: "Invalid attendance ID format" });
+    }
+
     const attendance = await attendanceModel.findById(attendanceId);
     if (!attendance) {
       return res.status(404).json({ message: "Attendance not found" });
@@ -146,6 +182,7 @@ exports.updateStudentStatus = async (req, res) => {
 
     res.status(200).json({ message: "Status updated successfully", data: attendance });
   } catch (error) {
+    console.error("Update student status error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };

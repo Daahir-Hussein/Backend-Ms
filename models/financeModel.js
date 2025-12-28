@@ -39,6 +39,7 @@ const financeSchema = mongoose.Schema({
     }
     
 })
-financeSchema.index({fullName: 1, month:1, year:1 }, { unique: true });
+// Index for faster queries (not unique - allows multiple payments per month for different purposes)
+financeSchema.index({fullName: 1, month: 1, year: 1 });
 
 module.exports = mongoose.model("finance", financeSchema)

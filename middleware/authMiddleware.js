@@ -14,9 +14,14 @@ exports.authenticate = async (req, res, next) => {
     const token = authHeader.substring(7); // Remove "Bearer " prefix
 
     // Verify token
+    if (!process.env.JWT_SECRET) {
+      console.error("⚠️  JWT_SECRET is not set in environment variables!");
+      return res.status(500).json({ message: "Server configuration error" });
+    }
+
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || "your-secret-key-change-in-production"
+      process.env.JWT_SECRET
     );
 
     // Check if user still exists
@@ -59,6 +64,8 @@ exports.authorize = (...roles) => {
     next();
   };
 };
+
+
 
 
 

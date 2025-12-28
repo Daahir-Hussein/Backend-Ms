@@ -26,10 +26,11 @@ const monthlyFinanceReport = async (req, res) => {
             { $sort: { "_id.year": -1, "_id.month": 1 } }
         ]);
 
-        res.send(report);
+        res.status(200).json(report);
 
     } catch (error) {
-        res.status(500).send("Error generating monthly report");
+        console.error("Monthly finance report error:", error);
+        res.status(500).json({ error: error.message || "Error generating monthly report" });
     }
 };
 
@@ -40,7 +41,12 @@ const monthlyFinanceReport = async (req, res) => {
 const studentFinanceReport = async (req, res) => {
     try {
 
-        const studentId = req.params.studentId;
+        const studentId = req.params.id || req.params.studentId;
+
+        // Validate ObjectId format
+        if (!studentId || !studentId.match(/^[0-9a-fA-F]{24}$/)) {
+            return res.status(400).json({ error: "Invalid student ID format" });
+        }
 
         const report = await financeModel.aggregate([
             { $match: { fullName: new mongoose.Types.ObjectId(studentId) }},
@@ -72,11 +78,11 @@ const studentFinanceReport = async (req, res) => {
             }
         ]);
 
-        res.send(report);
+        res.status(200).json(report);
 
     } catch (error) {
-        console.log(error);
-        res.status(500).send("Error generating student report");
+        console.error("Student finance report error:", error);
+        res.status(500).json({ error: error.message || "Error generating student report" });
     }
 };
 
@@ -92,11 +98,11 @@ const specificMonthReport = async (req, res) => {
             .populate("fullName", "fullName")
             .populate("classId", "className");
 
-        res.send(report);
+        res.status(200).json(report);
 
     } catch (error) {
-        console.log(error);
-        res.status(500).send("Error generating detailed month report");
+        console.error("Specific month report error:", error);
+        res.status(500).json({ error: error.message || "Error generating detailed month report" });
     }
 };
 
@@ -175,8 +181,8 @@ const studentsPaymentStatus = async (req, res) => {
         });
         
     } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: error.message });
+        console.error("Students payment status error:", error);
+        res.status(500).json({ error: error.message || "Error generating payment status report" });
     }
 }
 
