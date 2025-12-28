@@ -28,7 +28,7 @@ const app = express()
 // Middleware
 // CORS configuration - allow requests from frontend
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173', // Vite default port
+  origin: process.env.FRONTEND_URL || 'https://www.altaqwaschool.com', // Vite default port
   credentials: true,
   optionsSuccessStatus: 200
 };
