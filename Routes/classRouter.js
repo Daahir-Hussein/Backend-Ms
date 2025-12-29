@@ -4,13 +4,15 @@ const { authenticate, authorize } = require("../middleware/authMiddleware")
 
 const route = express.Router()
 
-// All routes require authentication and admin role
+// All routes require authentication
 route.use(authenticate)
-route.use(authorize("admin"))
 
-route.post("/class", classController.createClass)
-route.get("/read/class", classController.readClass)
-route.put("/update/class/:id", classController.updateClass)
-route.delete("/delete/class/:id", classController.deleteClass)
+// GET endpoint accessible to both admin and teacher roles
+route.get("/read/class", authorize("admin", "teacher"), classController.readClass)
+
+// CREATE, UPDATE, DELETE require admin role only
+route.post("/class", authorize("admin"), classController.createClass)
+route.put("/update/class/:id", authorize("admin"), classController.updateClass)
+route.delete("/delete/class/:id", authorize("admin"), classController.deleteClass)
 
 module.exports = route
