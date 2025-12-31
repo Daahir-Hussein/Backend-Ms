@@ -30,6 +30,16 @@ exports.addAttendance = async (req, res) => {
       return res.status(404).json({ message: `Teacher not found with ID: ${teacherName}` });
     }
 
+    // ✅ Verify that the teacher is assigned to this class
+    const teacherClassId = teacherExists.classId?.toString() || teacherExists.classId;
+    const requestedClassId = classId.toString();
+    
+    if (teacherClassId !== requestedClassId) {
+      return res.status(403).json({ 
+        message: "Only the teacher assigned to this class can take attendance" 
+      });
+    }
+
     // ✅ Hubi in attendance hore aan loogu diiwaan gelin maanta
     // Get the date from the first student record, or use today's date
     const attendanceDate = students && students.length > 0 && students[0].date 
