@@ -21,7 +21,7 @@ exports.addAttendance = async (req, res) => {
 
     // ✅ Hubi in class iyo teacher ay jiraan
     const classExists = await classModel.findById(classId);
-    const teacherExists = await teacherModel.findOne({ _id: teacherName });
+    const teacherExists = await teacherModel.findById(teacherName);
 
     if (!classExists) {
       return res.status(404).json({ message: "Class not found" });
@@ -31,9 +31,22 @@ exports.addAttendance = async (req, res) => {
     }
 
     // ✅ Verify that the teacher is assigned to this class
-    const teacherClassId = teacherExists.classId?.toString() || teacherExists.classId;
+    // Handle both populated (object) and non-populated (ObjectId) classId
+    let teacherClassId;
+    if (teacherExists.classId) {
+      // If classId is populated (object with _id), use _id, otherwise use the value directly
+      teacherClassId = teacherExists.classId._id 
+        ? teacherExists.classId._id.toString() 
+        : teacherExists.classId.toString();
+    } else {
+      return res.status(403).json({ 
+        message: "Teacher is not assigned to any class" 
+      });
+    }
+    
     const requestedClassId = classId.toString();
     
+    // Compare the string representations of the ObjectIds
     if (teacherClassId !== requestedClassId) {
       return res.status(403).json({ 
         message: "Only the teacher assigned to this class can take attendance" 
